@@ -1,9 +1,11 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;
 
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -45,6 +47,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 })
+
+// Creates a cookie named username for login purposes
+app.post('/login', (req, res) => {
+  res.cookie('username', req.body.username);
+  res.redirect('/urls');
+});
 
 app.get("/", (req, res) => {
   res.send("Hello!");
