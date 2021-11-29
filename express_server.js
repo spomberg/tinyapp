@@ -43,6 +43,16 @@ function generateRandomString() {
   return result;
 };
 
+// Checks if an email is already in the users database
+function checkEmail (email) {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return true;
+    } 
+  }
+  return false;
+};
+
 // Creates a new short URL and adds it to the database
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
@@ -76,15 +86,19 @@ app.post("/logout", (req, res) => {
 
 // Registration page POST route
 app.post("/register", (req, res) => {
-  const userID = generateRandomString();
-  users[userID] = {
-    id: userID,
-    email: req.body.email,
-    password: req.body.password
-  }
-  res.cookie('user_id', userID);
-  console.log(users);
-  res.redirect("/urls");
+  if (!req.body.email || !req.body.password || checkEmail(req.body.email)) {
+    res.status(400).end();
+  } else {
+    const userID = generateRandomString();
+    users[userID] = {
+      id: userID,
+      email: req.body.email,
+      password: req.body.password
+    }
+    res.cookie('user_id', userID);
+    console.log(users);
+    res.redirect("/urls");
+};
 });
 
 app.get("/", (req, res) => {
