@@ -96,6 +96,12 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// Registration page route
+app.get("/register", (req, res) => {
+  const templateVars = { username: req.cookies["username"] }
+  res.render("register", templateVars);
+});
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
