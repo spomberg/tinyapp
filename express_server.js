@@ -101,16 +101,18 @@ app.post("/register", (req, res) => {
 };
 });
 
-app.get("/", (req, res) => {
-  res.redirect("/urls");
-});
-
 app.get("/urls", (req, res) => {
   const templateVars = { 
     urls: urlDatabase,
     user: users[req.cookies['user_id']] 
   };
   res.render("urls_index", templateVars);
+});
+
+// Login page GET route
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies['user_id']] }
+  res.render("login", templateVars);
 });
 
 // Registration page GET route
@@ -122,6 +124,10 @@ app.get("/register", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies['user_id']] };
   res.render("urls_new", templateVars);
+});
+
+app.get("/", (req, res) => {
+  res.redirect("/urls");
 });
 
 app.get("/urls/:shortURL", (req, res) => {
