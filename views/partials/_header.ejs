@@ -13,14 +13,14 @@
     <% if (user) { %>
       <form class="form" action="/logout" method="POST">
         <a>Logged in as: <%=user.email%>!</a>
-        <button>Logout</button>
+        <button class="btn btn-outline-dark" style="margin: 0.5em">Logout</button>
       </form> 
     <% } else {%>
       <form method="GET" action=/register>
-        <button>Register</button>
+        <button class="btn btn-success">Register</button>
       </form>
       <form method="GET" action=/login>
-        <button style="margin: 0.5em">Login</button>
+        <button class="btn btn-success" style="margin: 0.5em">Login</button>
       </form>
   <% } %>
   </nav>
