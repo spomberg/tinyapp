@@ -47,7 +47,7 @@ function generateRandomString() {
 function checkEmail (email) {
   for (let user in users) {
     if (users[user].email === email) {
-      return true;
+      return user;
     } 
   }
   return false;
@@ -72,15 +72,18 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
-// Creates a cookie named username for login purposes
+// Login page POST route
 app.post("/login", (req, res) => {
-  res.cookie('username', req.body.username);
-  res.redirect('/urls');
+  const userID = checkEmail(req.body.email);
+  if (userID && users[userID].password === req.body.password) {
+    res.cookie("user_id", userID);
+    res.redirect('/urls');
+  } else res.status(403).end();
 });
 
 // Clears cookies and logs user out
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 })
 
