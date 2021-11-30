@@ -53,6 +53,17 @@ function checkEmail (email) {
   return false;
 };
 
+// Returns the URLs that belong to the current logged-in user
+function urlsForUser(id) {
+  const result = {};
+  for (let url in urlDatabase) {
+    if (id === urlDatabase[url].userID) {
+      result[url] = { longURL: urlDatabase[url].longURL, userID: id };
+    }
+  }
+  return result;
+}
+
 // Creates a new short URL and adds it to the database
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
@@ -105,13 +116,14 @@ app.post("/register", (req, res) => {
 
 // URLs index page GET route
 app.get("/urls", (req, res) => {
-  if (users[req.cookies["user_id"]]) {
+  const userID = req.cookies["user_id"];
+  if (users[userID]) {
     const templateVars = { 
-      urls: urlDatabase,
-      user: users[req.cookies['user_id']] 
+      urls: urlsForUser(userID),
+      user: users[userID] 
     };
     res.render("urls_index", templateVars);
-  } else res.redirect("/login");
+  } else res.redirect("/error");
 });
 
 // Login page GET route
@@ -140,12 +152,15 @@ app.get("/", (req, res) => {
 
 // Short URL page GET route
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { 
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL].longURL, 
-    user: users[req.cookies['user_id']]
-  };
-  res.render("urls_show", templateVars);
+  const urls = urlsForUser(req.cookies["user_id"]);
+  if (urls[req.params.shortURL]) {
+    const templateVars = { 
+      shortURL: req.params.shortURL, 
+      longURL: urlDatabase[req.params.shortURL].longURL, 
+      user: users[req.cookies['user_id']]
+    };
+    res.render("urls_show", templateVars);
+  } else res.redirect("/error");
 });
 
 // Route that redirects browser to long URL
@@ -153,6 +168,15 @@ app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
+
+// Error page route
+app.get("/error", (req, res) => {
+  const templateVars = { 
+    user: users[req.cookies['user_id']],
+    urls: urlsForUser(req.cookies["user_id"]) 
+  };
+  res.render("error", templateVars)
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
