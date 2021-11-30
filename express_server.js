@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const bcrypt = require("bcrypt");
 const app = express();
 const PORT = 8080;
 
@@ -17,12 +18,12 @@ const users = {
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
-    password: "dishwasher-funk"
+    password: bcrypt.hashSync("dishwasher-funk", 10)
   }
 };
 
@@ -92,7 +93,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 // Login page POST route
 app.post("/login", (req, res) => {
   const userID = checkEmail(req.body.email);
-  if (userID && users[userID].password === req.body.password) {
+  const password = req.body.password;
+  if (userID && bcrypt.compareSync(password, users[userID].password)) {
     res.cookie("user_id", userID);
     res.redirect('/urls');
   } else res.status(403).end();
@@ -113,7 +115,7 @@ app.post("/register", (req, res) => {
     users[userID] = {
       id: userID,
       email: req.body.email,
-      password: req.body.password
+      password: bcrypt.hashSync(req.body.password, 10)
     }
     res.cookie('user_id', userID);
     res.redirect("/urls");
