@@ -72,15 +72,21 @@ app.post("/urls", (req, res) => {
 });
 
 // Edits an existing URL
-app.post("/urls/:shortURL/update", (req, res) => {
-  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
-  res.redirect(`/urls`);
+app.post("/urls/:shortURL/", (req, res) => {
+  const shortURL = req.params.shortURL;
+  if (urlDatabase[shortURL].userID === req.cookies["user_id"]) {
+    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+    res.redirect(`/urls`);
+  } else res.redirect(401, "/error");
 }) 
 
 // Deletes a URL from the database
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  const shortURL = req.params.shortURL;
+    if (urlDatabase[shortURL].userID === req.cookies["user_id"]) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
+  } else res.redirect(401, "/error");
 });
 
 // Login page POST route
