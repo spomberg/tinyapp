@@ -1,12 +1,16 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require("bcrypt");
 const app = express();
 const PORT = 8080;
 
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'user_id',
+  keys: ['key1', 'key2'],
+  maxAge: 24 * 60 * 60 * 1000
+}));
 app.set("view engine", "ejs");
 
 const urlDatabase = {
@@ -68,14 +72,14 @@ function urlsForUser(id) {
 // Creates a new short URL and adds it to the database
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.cookies["user_id"] };
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.user_id };
   res.redirect(`/urls/${shortURL}`);
 });
 
 // Edits an existing URL
 app.post("/urls/:shortURL/", (req, res) => {
   const shortURL = req.params.shortURL;
-  if (urlDatabase[shortURL].userID === req.cookies["user_id"]) {
+  if (urlDatabase[shortURL].userID === req.session.user_id) {
     urlDatabase[req.params.shortURL].longURL = req.body.longURL;
     res.redirect(`/urls`);
   } else res.redirect(401, "/error");
@@ -84,7 +88,7 @@ app.post("/urls/:shortURL/", (req, res) => {
 // Deletes a URL from the database
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-    if (urlDatabase[shortURL].userID === req.cookies["user_id"]) {
+    if (urlDatabase[shortURL].userID === req.session.user_id) {
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
   } else res.redirect(401, "/error");
@@ -95,14 +99,14 @@ app.post("/login", (req, res) => {
   const userID = checkEmail(req.body.email);
   const password = req.body.password;
   if (userID && bcrypt.compareSync(password, users[userID].password)) {
-    res.cookie("user_id", userID);
+    req.session.user_id = userID;
     res.redirect('/urls');
   } else res.status(403).end();
 });
 
 // Clears cookies and logs user out
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/urls");
 })
 
@@ -117,14 +121,14 @@ app.post("/register", (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10)
     }
-    res.cookie('user_id', userID);
+    req.session.user_id = userID;
     res.redirect("/urls");
 };
 });
 
 // URLs index page GET route
 app.get("/urls", (req, res) => {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   if (users[userID]) {
     const templateVars = { 
       urls: urlsForUser(userID),
@@ -136,20 +140,20 @@ app.get("/urls", (req, res) => {
 
 // Login page GET route
 app.get("/login", (req, res) => {
-  const templateVars = { user: users[req.cookies['user_id']] }
+  const templateVars = { user: users[req.session.user_id] }
   res.render("login", templateVars);
 });
 
 // Registration page GET route
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.cookies['user_id']] }
+  const templateVars = { user: users[req.session.user_id] }
   res.render("register", templateVars);
 });
 
 // Create new URL page GET route
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies['user_id']] };
-  if (users[req.cookies['user_id']]) {
+  const templateVars = { user: users[req.session.user_id] };
+  if (users[req.session.user_id]) {
     res.render("urls_new", templateVars);
   } else res.redirect("/login");
 });
@@ -160,12 +164,12 @@ app.get("/", (req, res) => {
 
 // Short URL page GET route
 app.get("/urls/:shortURL", (req, res) => {
-  const urls = urlsForUser(req.cookies["user_id"]);
+  const urls = urlsForUser(req.session.user_id);
   if (urls[req.params.shortURL]) {
     const templateVars = { 
       shortURL: req.params.shortURL, 
       longURL: urlDatabase[req.params.shortURL].longURL, 
-      user: users[req.cookies['user_id']]
+      user: users[req.session.user_id]
     };
     res.render("urls_show", templateVars);
   } else res.redirect("/error");
@@ -180,8 +184,8 @@ app.get("/u/:shortURL", (req, res) => {
 // Error page route
 app.get("/error", (req, res) => {
   const templateVars = { 
-    user: users[req.cookies['user_id']],
-    urls: urlsForUser(req.cookies["user_id"]) 
+    user: users[req.session.user_id],
+    urls: urlsForUser(req.session.user_id) 
   };
   res.render("error", templateVars)
 })
