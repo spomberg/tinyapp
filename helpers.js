@@ -8,4 +8,32 @@ function getUserByEmail (email, database) {
   return;
 };
 
-module.exports = { getUserByEmail };
+// Generates a random string with 6 characters
+function generateRandomString() {
+  let result = "";
+
+  const generateOneChar = (n) => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    if (n > 0) {
+      result += chars[Math.floor(Math.random() * 54)];
+      generateOneChar(n - 1);
+    }
+  }
+
+  generateOneChar(6);
+
+  return result;
+};
+
+// Returns the URLs that belong to the current logged-in user
+function urlsForUser(id, database) {
+  const result = {};
+  for (let url in database) {
+    if (id === database[url].userID) {
+      result[url] = { longURL: database[url].longURL, userID: id };
+    }
+  }
+  return result;
+}
+
+module.exports = { getUserByEmail, generateRandomString, urlsForUser };
