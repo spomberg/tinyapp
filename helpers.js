@@ -1,15 +1,15 @@
 // Checks if an email is already in the users database, returns the userID if found and false if not
-function getUserByEmail (email, database) {
+const getUserByEmail = (email, database) => {
   for (let user in database) {
     if (database[user].email === email) {
       return user;
-    } 
+    }
   }
   return;
 };
 
 // Generates a random string with 6 characters
-function generateRandomString() {
+const generateRandomString = () => {
   let result = "";
 
   const generateOneChar = (n) => {
@@ -18,7 +18,7 @@ function generateRandomString() {
       result += chars[Math.floor(Math.random() * 54)];
       generateOneChar(n - 1);
     }
-  }
+  };
 
   generateOneChar(6);
 
@@ -26,7 +26,7 @@ function generateRandomString() {
 };
 
 // Returns the URLs that belong to the current logged-in user
-function urlsForUser(id, database) {
+const urlsForUser = (id, database) => {
   const result = {};
   for (let url in database) {
     if (id === database[url].userID) {
@@ -34,6 +34,6 @@ function urlsForUser(id, database) {
     }
   }
   return result;
-}
+};
 
 module.exports = { getUserByEmail, generateRandomString, urlsForUser };

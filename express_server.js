@@ -20,46 +20,46 @@ const urlDatabase = {
   "9sm5xK": { longURL: "http://www.google.com", userID: "user2RandomID" }
 };
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: bcrypt.hashSync("dishwasher-funk", 10)
   }
 };
 
 // GET ROUTES
 
-// URLs index page GET route
+// GET /urls
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
   if (users[userID]) {
-    const templateVars = { 
+    const templateVars = {
       urls: urlsForUser(userID, urlDatabase),
-      user: users[userID] 
+      user: users[userID]
     };
     res.render("urls_index", templateVars);
   } else res.redirect("/error");
 });
 
-// Login page GET route
+// GET /login
 app.get("/login", (req, res) => {
-  const templateVars = { user: users[req.session.user_id] }
+  const templateVars = { user: users[req.session.user_id] };
   res.render("login", templateVars);
 });
 
-// Registration page GET route
+// GET /register
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.session.user_id] }
+  const templateVars = { user: users[req.session.user_id] };
   res.render("register", templateVars);
 });
 
-// Create new URL page GET route
+// GET /urls/new
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.session.user_id] };
   if (users[req.session.user_id]) {
@@ -67,95 +67,98 @@ app.get("/urls/new", (req, res) => {
   } else res.redirect("/login");
 });
 
+// GET /
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
 
-// Short URL page GET route
+// GET /urls/:shortURL
 app.get("/urls/:shortURL", (req, res) => {
   const urls = urlsForUser(req.session.user_id, urlDatabase);
   if (urls[req.params.shortURL]) {
-    const templateVars = { 
-      shortURL: req.params.shortURL, 
-      longURL: urlDatabase[req.params.shortURL].longURL, 
+    const templateVars = {
+      shortURL: req.params.shortURL,
+      longURL: urlDatabase[req.params.shortURL].longURL,
       user: users[req.session.user_id]
     };
     res.render("urls_show", templateVars);
   } else res.redirect("/error");
 });
 
-// Route that redirects browser to long URL
+// GET /u/:shortURL
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
-// Error page route
+// GET /error
 app.get("/error", (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     user: users[req.session.user_id],
-    urls: urlsForUser(req.session.user_id, urlDatabase) 
+    urls: urlsForUser(req.session.user_id, urlDatabase),
+    status: req.statusMessage
   };
-  res.render("error", templateVars)
-})
+  res.render("error", templateVars);
+});
 
 // POST ROUTES
 
-// Creates a new short URL and adds it to the database
+// POST /urls
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.user_id };
   res.redirect(`/urls/${shortURL}`);
 });
 
-// Edits an existing URL
-app.post("/urls/:shortURL/", (req, res) => {
-  const shortURL = req.params.shortURL;
-  if (urlDatabase[shortURL].userID === req.session.user_id) {
-    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
-    res.redirect(`/urls`);
-  } else res.redirect(401, "/error");
-}) 
-
-// Deletes a URL from the database
-app.post("/urls/:shortURL/delete", (req, res) => {
-  const shortURL = req.params.shortURL;
-    if (urlDatabase[shortURL].userID === req.session.user_id) {
-    delete urlDatabase[req.params.shortURL];
-    res.redirect("/urls");
-  } else res.redirect(401, "/error");
-});
-
-// Login page POST route
-app.post("/login", (req, res) => {
-  const userID = getUserByEmail(req.body.email, users);
-  const password = req.body.password;
-  if (userID && bcrypt.compareSync(password, users[userID].password)) {
-    req.session.user_id = userID;
-    res.redirect('/urls');
-  } else res.status(403).end();
-});
-
-// Clears cookies and logs user out
-app.post("/logout", (req, res) => {
-  req.session = null;
-  res.redirect("/urls");
-})
-
-// Registration page POST route
+// POST /register
 app.post("/register", (req, res) => {
   if (!req.body.email || !req.body.password || getUserByEmail(req.body.email, users)) {
-    res.status(400).end();
+    !req.body.email || !req.body.password ? err = "Email and password required" : err = "Email has already been used"
+    res.status(400).send(err);
   } else {
     const userID = generateRandomString();
     users[userID] = {
       id: userID,
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10)
-    }
+    };
     req.session.user_id = userID;
     res.redirect("/urls");
-};
+  }
+});
+
+// POST /login
+app.post("/login", (req, res) => {
+  const userID = getUserByEmail(req.body.email, users);
+  const password = req.body.password;
+  if (userID && bcrypt.compareSync(password, users[userID].password)) {
+    req.session.user_id = userID;
+    res.redirect('/urls');
+  } else res.status(401).send("Incorrect password");
+});
+
+// POST /logout
+app.post("/logout", (req, res) => {
+  req.session = null;
+  res.redirect("/urls");
+});
+
+// POST /urls/:shortURL
+app.post("/urls/:shortURL/", (req, res) => {
+  const shortURL = req.params.shortURL;
+  if (urlDatabase[shortURL].userID === req.session.user_id) {
+    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+    res.redirect(`/urls`);
+  } else res.redirect(401, "/error");
+});
+
+// POST /urls/:shortURL/delete
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const shortURL = req.params.shortURL;
+  if (urlDatabase[shortURL].userID === req.session.user_id) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
+  } else res.redirect(401, "/error");
 });
 
 app.listen(PORT, () => {
