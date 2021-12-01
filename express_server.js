@@ -69,7 +69,7 @@ app.get("/urls/new", (req, res) => {
 
 // GET /
 app.get("/", (req, res) => {
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 // GET /urls/:shortURL
@@ -88,7 +88,7 @@ app.get("/urls/:shortURL", (req, res) => {
 // GET /u/:shortURL
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+  longURL.slice(0, 7) === 'http://' ? res.redirect(longURL) : res.redirect(`http://${longURL}`);
 });
 
 // GET /error
