@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcrypt");
+const { getUserByEmail } = require("./helpers");
 const app = express();
 const PORT = 8080;
 
@@ -48,16 +49,6 @@ function generateRandomString() {
   return result;
 };
 
-// Checks if an email is already in the users database, returns the userID if found and false if not
-function checkEmail (email) {
-  for (let user in users) {
-    if (users[user].email === email) {
-      return user;
-    } 
-  }
-  return false;
-};
-
 // Returns the URLs that belong to the current logged-in user
 function urlsForUser(id) {
   const result = {};
@@ -96,7 +87,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // Login page POST route
 app.post("/login", (req, res) => {
-  const userID = checkEmail(req.body.email);
+  const userID = getUserByEmail(req.body.email, users);
   const password = req.body.password;
   if (userID && bcrypt.compareSync(password, users[userID].password)) {
     req.session.user_id = userID;
@@ -112,7 +103,7 @@ app.post("/logout", (req, res) => {
 
 // Registration page POST route
 app.post("/register", (req, res) => {
-  if (!req.body.email || !req.body.password || checkEmail(req.body.email)) {
+  if (!req.body.email || !req.body.password || getUserByEmail(req.body.email, users)) {
     res.status(400).end();
   } else {
     const userID = generateRandomString();
