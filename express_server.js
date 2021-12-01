@@ -113,7 +113,8 @@ app.post("/urls", (req, res) => {
 // POST /register
 app.post("/register", (req, res) => {
   if (!req.body.email || !req.body.password || getUserByEmail(req.body.email, users)) {
-    !req.body.email || !req.body.password ? err = "Email and password required" : err = "Email has already been used"
+    let err = "";
+    !req.body.email || !req.body.password ? err = "Email and password required" : err = "Email address has already been used";
     res.status(400).send(err);
   } else {
     const userID = generateRandomString();
