@@ -36,4 +36,15 @@ const urlsForUser = (id, database) => {
   return result;
 };
 
-module.exports = { getUserByEmail, generateRandomString, urlsForUser };
+// Returns true if the visitorID is not found in the visit log.
+const isFirstVisit = (visitorID, visitLog) => {
+  let firstVisit = true;
+  for (let visit in visitLog) {
+    if (visitorID === visitLog[visit].visitorID) {
+      return false;
+    }
+  }
+  return firstVisit;
+}
+
+module.exports = { getUserByEmail, generateRandomString, urlsForUser, isFirstVisit };

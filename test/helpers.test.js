@@ -1,6 +1,6 @@
 const { assert } = require('chai');
 
-const { getUserByEmail } = require('../helpers.js');
+const { getUserByEmail, isFirstVisit } = require('../helpers.js');
 
 const testUsers = {
   "userRandomID": {
@@ -26,4 +26,19 @@ describe('getUserByEmail', function() {
     const expectedOutput = undefined;
     assert.equal(user, expectedOutput);
   });
+});
+
+describe('isFirstVisit', function() {
+  const testLog = [{ visitorID: 'Hsdjsak', timestamp: "XXXXX" }, { visitorID: 'asdasre', timestamp: "XXXXX" }, { visitorID: 'sgDger3', timestamp: "XXXXX" }]
+  it('should return false if the visitor_id is found in the log', function() {
+    const input = isFirstVisit("Hsdjsak", testLog);
+    const expectedOutput = false;
+    assert.equal(input, expectedOutput);
+  });
+  it('should return true if the visitor_id is NOT found in the log', function() {
+    const input = isFirstVisit("xxxxxxx", testLog);
+    const expectedOutput = true;
+    assert.equal(input, expectedOutput);
+  });
+
 });
