@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcrypt");
-const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
+const { getUserByEmail, generateRandomString, urlsForUser, isFirstVisit } = require("./helpers");
 const app = express();
 const PORT = 8080;
 
@@ -16,8 +16,8 @@ app.set("view engine", "ejs");
 
 // TEST DATABASES
 const urlDatabase = {
-  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID", visits: 0 },
-  "9sm5xK": { longURL: "http://www.google.com", userID: "user2RandomID", visits: 0 }
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID", visits: 0, uniqueVisitors: 0, visitLog: [] },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "user2RandomID", visits: 0, uniqueVisitors: 0, visitLog: [] }
 };
 
 const users = {
@@ -75,12 +75,14 @@ app.get("/", (req, res) => {
 // GET /urls/:shortURL
 app.get("/urls/:shortURL", (req, res) => {
   const urls = urlsForUser(req.session.user_id, urlDatabase);
+  const shortURL = req.params.shortURL;
   if (urls[req.params.shortURL]) {
     const templateVars = {
-      shortURL: req.params.shortURL,
-      longURL: urlDatabase[req.params.shortURL].longURL,
+      shortURL,
+      longURL: urlDatabase[shortURL].longURL,
       user: users[req.session.user_id],
-      visits: urlDatabase[req.params.shortURL].visits
+      visits: urlDatabase[shortURL].visits,
+      uniqueVisitors: urlDatabase[shortURL].uniqueVisitors
     };
     res.render("urls_show", templateVars);
   } else res.redirect("/error");
@@ -88,8 +90,24 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // GET /u/:shortURL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  urlDatabase[req.params.shortURL].visits++;
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL].longURL;
+  const visitorID = req.session.visitor_id;
+  const timestamp = new Date(Date.now()).toString();
+
+  // Generates new visitor_id cookie if the cookie is not found
+  if (!visitorID) { 
+    req.session.visitor_id = generateRandomString();
+  }
+  
+  urlDatabase[shortURL].visits++;
+  
+  // Use helper function to test if it's the visitor's first visit, then it increments the counter if necessary
+  if (isFirstVisit(visitorID, urlDatabase[shortURL].visitLog)) {
+    urlDatabase[shortURL].uniqueVisitors++;
+  }
+
+  urlDatabase[shortURL].visitLog.push({ timestamp, visitorID });
   longURL.slice(0, 7) === 'http://' ? res.redirect(longURL) : res.redirect(`http://${longURL}`);
 });
 
@@ -108,7 +126,12 @@ app.get("/error", (req, res) => {
 // POST /urls
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.user_id, visits: 0 };
+  urlDatabase[shortURL] = { 
+    longURL: req.body.longURL, 
+    userID: req.session.user_id, 
+    visits: 0, 
+    uniqueVisitors: 0, 
+    visitLog: [] };
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -142,7 +165,7 @@ app.post("/login", (req, res) => {
 
 // POST /logout
 app.post("/logout", (req, res) => {
-  req.session = null;
+  req.session.user_id = null;
   res.redirect("/urls");
 });
 
@@ -150,7 +173,7 @@ app.post("/logout", (req, res) => {
 app.post("/urls/:shortURL/", (req, res) => {
   const shortURL = req.params.shortURL;
   if (urlDatabase[shortURL].userID === req.session.user_id) {
-    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+    urlDatabase[shortURL].longURL = req.body.longURL;
     res.redirect(`/urls`);
   } else res.redirect(401, "/error");
 });
