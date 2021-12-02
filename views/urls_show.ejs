@@ -25,6 +25,16 @@
           <h6 class="card-text">Unique visitors: <%= uniqueVisitors %></h6>
         </div>
       </form>
+      <h5 class="card-title" style="margin: 1em;">Visit Log</h5>
+      <ol class="list-group list-group-numbered"></ol>
+        <% if (visitLog.length === 0) { %>
+          <h5> No visits yet </h5>
+          <% } else { %>
+            <% for (let x = visitLog.length - 1; x >= 0; x--) { %>
+            <li class="list-group-item">Time: <%= visitLog[x].timestamp %> --- Visitor ID: <%= visitLog[x].visitorID %></li>
+          <% } %>
+        <% } %>
+      </ol>
     <div class="card-footer text-muted"></div>
   </div>
   <!-- Bootstrap JS -->

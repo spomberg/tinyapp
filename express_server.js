@@ -82,7 +82,8 @@ app.get("/urls/:shortURL", (req, res) => {
       longURL: urlDatabase[shortURL].longURL,
       user: users[req.session.user_id],
       visits: urlDatabase[shortURL].visits,
-      uniqueVisitors: urlDatabase[shortURL].uniqueVisitors
+      uniqueVisitors: urlDatabase[shortURL].uniqueVisitors,
+      visitLog: urlDatabase[shortURL].visitLog
     };
     res.render("urls_show", templateVars);
   } else res.redirect("/error");
@@ -96,7 +97,7 @@ app.get("/u/:shortURL", (req, res) => {
   const timestamp = new Date(Date.now()).toString();
 
   // Generates new visitor_id cookie if the cookie is not found
-  if (!visitorID) { 
+  if (!visitorID) {
     req.session.visitor_id = generateRandomString();
   }
   
@@ -126,11 +127,11 @@ app.get("/error", (req, res) => {
 // POST /urls
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = { 
-    longURL: req.body.longURL, 
-    userID: req.session.user_id, 
-    visits: 0, 
-    uniqueVisitors: 0, 
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.session.user_id,
+    visits: 0,
+    uniqueVisitors: 0,
     visitLog: [] };
   res.redirect(`/urls/${shortURL}`);
 });
