@@ -16,8 +16,8 @@ app.set("view engine", "ejs");
 
 // TEST DATABASES
 const urlDatabase = {
-  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
-  "9sm5xK": { longURL: "http://www.google.com", userID: "user2RandomID" }
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID", visits: 0 },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "user2RandomID", visits: 0 }
 };
 
 const users = {
@@ -79,7 +79,8 @@ app.get("/urls/:shortURL", (req, res) => {
     const templateVars = {
       shortURL: req.params.shortURL,
       longURL: urlDatabase[req.params.shortURL].longURL,
-      user: users[req.session.user_id]
+      user: users[req.session.user_id],
+      visits: urlDatabase[req.params.shortURL].visits
     };
     res.render("urls_show", templateVars);
   } else res.redirect("/error");
@@ -88,6 +89,7 @@ app.get("/urls/:shortURL", (req, res) => {
 // GET /u/:shortURL
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL].longURL;
+  urlDatabase[req.params.shortURL].visits++;
   longURL.slice(0, 7) === 'http://' ? res.redirect(longURL) : res.redirect(`http://${longURL}`);
 });
 
@@ -106,7 +108,7 @@ app.get("/error", (req, res) => {
 // POST /urls
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.user_id };
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.user_id, visits: 0 };
   res.redirect(`/urls/${shortURL}`);
 });
 
